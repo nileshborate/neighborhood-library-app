@@ -23,3 +23,10 @@ class BookOut(BaseModel):
     total_copies: int
     available_copies: int
     created_at: datetime
+
+class BookUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    author: Optional[str] = Field(None, min_length=1, max_length=255)
+    isbn: Optional[str] = Field(None, max_length=20)
+    genre: Optional[str] = Field(None, max_length=100)
+    total_copies: Optional[int] = Field(None, ge=0)

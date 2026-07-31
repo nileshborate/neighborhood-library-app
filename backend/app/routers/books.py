@@ -44,3 +44,35 @@ def list_books(
     if available_only:
         query = query.filter(models.Book.available_copies > 0)
     return query.order_by(models.Book.title).all()
+
+@router.get("/{book_id}", response_model=schemas.BookOut)
+def get_book(book_id: int, db: Session = Depends(get_db)):
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return book
+
+
+@router.put("/{book_id}", response_model=schemas.BookOut)
+def update_book(book_id: int, payload: schemas.BookUpdate, db: Session = Depends(get_db)):
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    data = payload.model_dump(exclude_unset=True)
+
+    if "total_copies" in data:
+        currently_borrowed = book.total_copies - book.available_copies
+        if data["total_copies"] < currently_borrowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot set total_copies below the {currently_borrowed} copies currently on loan",
+            )
+        book.available_copies = data["total_copies"] - currently_borrowed
+
+    for field, value in data.items():
+        setattr(book, field, value)
+
+    db.commit()
+    db.refresh(book)
+    return book
