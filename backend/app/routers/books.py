@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -27,3 +30,17 @@ def create_book(payload: schemas.BookCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(book)
     return book
+
+@router.get("", response_model=List[schemas.BookOut])
+def list_books(
+    q: Optional[str] = Query(None, description="Search by title or author"),
+    available_only: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.Book)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(models.Book.title.ilike(like), models.Book.author.ilike(like)))
+    if available_only:
+        query = query.filter(models.Book.available_copies > 0)
+    return query.order_by(models.Book.title).all()
