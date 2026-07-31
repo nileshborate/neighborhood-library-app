@@ -22,4 +22,8 @@ export const api = {
   listBooks: () => request('/books'),
   createBook: (data) =>
     request('/books', { method: 'POST', body: JSON.stringify(data) }),
+
+  listMembers: () => request('/members'),
+  createMember: (data) =>
+    request('/members', { method: 'POST', body: JSON.stringify(data) }),
 };
