@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, CheckConstraint
+from sqlalchemy import Column, Integer, String, DateTime, CheckConstraint, ForeignKey, Numeric
 from app.db.database import Base
 
 
@@ -31,3 +31,16 @@ class Member(Base):
     phone = Column(String(30), nullable=True)
     address = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+class Loan(Base):
+    __tablename__ = "loans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="RESTRICT"), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="RESTRICT"), nullable=False)
+
+    borrowed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    due_date = Column(DateTime, nullable=False)
+    returned_at = Column(DateTime, nullable=True)  # NULL = still borrowed
+
+    fine_amount = Column(Numeric(10, 2), nullable=False, default=0)
