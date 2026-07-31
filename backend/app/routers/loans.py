@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.database import get_db
@@ -75,3 +76,26 @@ def return_book(loan_id: int, payload: schemas.LoanReturn, db: Session = Depends
     db.commit()
     db.refresh(loan)
     return loan
+
+@router.get("", response_model=List[schemas.LoanOut])
+def list_loans(
+    member_id: Optional[int] = Query(None),
+    book_id: Optional[int] = Query(None),
+    active_only: bool = Query(False, description="Only currently-borrowed (not yet returned) loans"),
+    overdue_only: bool = Query(False, description="Only active loans past their due date"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.Loan).options(
+        joinedload(models.Loan.book), joinedload(models.Loan.member)
+    )
+
+    if member_id is not None:
+        query = query.filter(models.Loan.member_id == member_id)
+    if book_id is not None:
+        query = query.filter(models.Loan.book_id == book_id)
+    if active_only or overdue_only:
+        query = query.filter(models.Loan.returned_at.is_(None))
+    if overdue_only:
+        query = query.filter(models.Loan.due_date < datetime.utcnow())
+
+    return query.order_by(models.Loan.borrowed_at.desc()).all()
