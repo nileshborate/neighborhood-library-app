@@ -74,3 +74,6 @@ class LoanOut(BaseModel):
     fine_amount: Decimal
     book: BookOut
     member: MemberOut
+
+class LoanReturn(BaseModel):
+    returned_at: Optional[datetime] = None  # defaults to "now" if omitted

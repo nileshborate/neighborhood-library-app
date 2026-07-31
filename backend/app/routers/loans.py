@@ -8,7 +8,7 @@ from app.models import models
 from app.schemas import schemas
 
 router = APIRouter(prefix="/api/loans", tags=["loans"])
-
+FINE_PER_DAY = 10 
 
 @router.post("", response_model=schemas.LoanOut, status_code=201)
 def borrow_book(payload: schemas.LoanCreate, db: Session = Depends(get_db)):
@@ -45,6 +45,33 @@ def borrow_book(payload: schemas.LoanCreate, db: Session = Depends(get_db)):
     book.available_copies -= 1
 
     db.add(loan)
+    db.commit()
+    db.refresh(loan)
+    return loan
+
+@router.post("/{loan_id}/return", response_model=schemas.LoanOut)
+def return_book(loan_id: int, payload: schemas.LoanReturn, db: Session = Depends(get_db)):
+    loan = (
+        db.query(models.Loan)
+        .options(joinedload(models.Loan.book), joinedload(models.Loan.member))
+        .filter(models.Loan.id == loan_id)
+        .first()
+    )
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+
+    if loan.returned_at is not None:
+        raise HTTPException(status_code=400, detail="This book has already been returned")
+
+    returned_at = payload.returned_at or datetime.utcnow()
+    loan.returned_at = returned_at
+
+    if returned_at > loan.due_date:
+        overdue_days = (returned_at.date() - loan.due_date.date()).days
+        loan.fine_amount = FINE_PER_DAY * overdue_days
+
+    loan.book.available_copies += 1
+
     db.commit()
     db.refresh(loan)
     return loan
