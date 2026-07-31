@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
 
 class BookCreate(BaseModel):
@@ -30,3 +30,27 @@ class BookUpdate(BaseModel):
     isbn: Optional[str] = Field(None, max_length=20)
     genre: Optional[str] = Field(None, max_length=100)
     total_copies: Optional[int] = Field(None, ge=0)
+
+class MemberCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    email: EmailStr
+    phone: Optional[str] = Field(None, max_length=30)
+    address: Optional[str] = None
+
+
+class MemberUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=30)
+    address: Optional[str] = None
+
+
+class MemberOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    email: EmailStr
+    phone: Optional[str]
+    address: Optional[str]
+    created_at: datetime
