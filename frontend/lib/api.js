@@ -26,4 +26,13 @@ export const api = {
   listMembers: () => request('/members'),
   createMember: (data) =>
     request('/members', { method: 'POST', body: JSON.stringify(data) }),
+
+  listLoans: (params = {}) => request(`/loans?${new URLSearchParams(params)}`),
+  borrowBook: (data) =>
+    request('/loans', { method: 'POST', body: JSON.stringify(data) }),
+  returnLoan: (loanId) =>
+    request(`/loans/${loanId}/return`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
 };
