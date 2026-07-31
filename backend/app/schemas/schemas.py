@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from decimal import Decimal
 
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
@@ -54,3 +55,22 @@ class MemberOut(BaseModel):
     phone: Optional[str]
     address: Optional[str]
     created_at: datetime
+
+class LoanCreate(BaseModel):
+    book_id: int
+    member_id: int
+    loan_days: int = Field(14, ge=1, le=90, description="Number of days until due")
+
+
+class LoanOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    book_id: int
+    member_id: int
+    borrowed_at: datetime
+    due_date: datetime
+    returned_at: Optional[datetime]
+    fine_amount: Decimal
+    book: BookOut
+    member: MemberOut

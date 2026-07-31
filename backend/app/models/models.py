@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, CheckConstraint, ForeignKey, Numeric
+from sqlalchemy.orm import relationship
 from app.db.database import Base
 
 
@@ -16,11 +17,14 @@ class Book(Base):
     available_copies = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+    loans = relationship("Loan", back_populates="book")
+
     __table_args__ = (
         CheckConstraint("total_copies >= 0", name="ck_books_total_copies_nonneg"),
         CheckConstraint("available_copies >= 0", name="ck_books_available_copies_nonneg"),
         CheckConstraint("available_copies <= total_copies", name="ck_books_available_le_total"),
     )
+
 
 class Member(Base):
     __tablename__ = "members"
@@ -32,6 +36,9 @@ class Member(Base):
     address = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+    loans = relationship("Loan", back_populates="member")
+
+
 class Loan(Base):
     __tablename__ = "loans"
 
@@ -41,6 +48,9 @@ class Loan(Base):
 
     borrowed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     due_date = Column(DateTime, nullable=False)
-    returned_at = Column(DateTime, nullable=True)  # NULL = still borrowed
+    returned_at = Column(DateTime, nullable=True)
 
     fine_amount = Column(Numeric(10, 2), nullable=False, default=0)
+
+    book = relationship("Book", back_populates="loans")
+    member = relationship("Member", back_populates="loans")
